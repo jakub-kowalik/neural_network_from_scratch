@@ -24,6 +24,9 @@ class Activation(Layer):
         return self.activation_function.forward(x)
 
     def backward(self, error, learning_rate):
+        # if self.activation_function.__class__.__name__ == "Softmax":
+        #     # return error @ self.activation_function.backward(self.x)
+        #     return error
         return error * self.activation_function.backward(self.x)
 
 
@@ -32,7 +35,7 @@ class Linear(Layer):
         super().__init__()
         self.input = None
         self.output = None
-        self.weights = np.random.normal(0, 0.01, (n_inputs, n_outputs)).astype(np.float32)
+        self.weights = np.random.normal(0, 0.001, (n_inputs, n_outputs)).astype(np.float32)
         # @TODO check how to initialize better
 
         self.bias = np.zeros((1, n_outputs))
@@ -47,6 +50,6 @@ class Linear(Layer):
         input_error = error @ self.weights.T
 
         self.weights -= learning_rate * (self.input.T @ error)
-        self.bias -= learning_rate * np.mean(error, axis=0)
+        self.bias -= learning_rate * np.sum(error, axis=0, keepdims=True)
 
         return input_error

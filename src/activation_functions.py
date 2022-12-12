@@ -25,7 +25,7 @@ class Sigmoid(ActivationFunction):
         self._output = 1 / (1 + np.exp(-x))
         return self._output
 
-    def backward(self, x):
+    def backward(self, x, *args):
         self._error = 1 / (1 + np.exp(-self._output)) * 1 / (1 + np.exp(-(1 - self._output)))
         return self._error
 
@@ -42,13 +42,16 @@ class ReLU(ActivationFunction):
 
 
 class Softmax(ActivationFunction):
+    # https://github.com/ddbourgin/numpy-ml/blob/master/numpy_ml/neural_nets/layers/layers.py#L2192-L2349
     def forward(self, x):
-        x = np.clip(x, a_min=1e-5, a_max=None)
-        self._output = np.exp(x) / np.sum(np.exp(x))
-        return self._output
+        # self._output = np.exp(x) / np.sum(np.exp(x))
+        # return self._output
+        e_X = np.exp(x - np.max(x, keepdims=True))
+        return e_X / e_X.sum(keepdims=True)
 
     # https://math.stackexchange.com/questions/2843505/derivative-of-softmax-without-cross-entropy
     def backward(self, x):
+        return 1
         s = self._output.reshape(-1, 1)
         self._error = np.diagflat(s) - np.dot(s, s.T)
         return self._error

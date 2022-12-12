@@ -7,7 +7,9 @@ class Model(ABC):
         self.epochs = epochs
         self.learning_rate = learning_rate
         self.loss_function = loss_function
-        self.batch_size = batch_size
+        if batch_size > 1:
+            print("Batch size is not supported yet")
+        self.batch_size = 1
 
     @abstractmethod
     def predict(self, x):
@@ -33,14 +35,10 @@ class Sequential(Model):
         return x
 
     def train(self, x, y):
-        x = np.array(x).astype(np.float32)
-        y = np.array(y).astype(np.float32)
-
         for epoch in range(self.epochs):
             for i in range(0, len(x), self.batch_size):
-                x_batch = x[i]
-                print(x_batch)
-                y_batch = y[i]
+                x_batch = x[i:i + self.batch_size]
+                y_batch = y[i:i + self.batch_size]
 
                 output = self.predict(x_batch)
 
@@ -48,7 +46,6 @@ class Sequential(Model):
                 error = self.loss_function.backward()
 
                 for layer in reversed(self.layers):
-                    print(error)
                     error = layer.backward(error, self.learning_rate)
 
             # if epoch % 100 == 0:
