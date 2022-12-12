@@ -35,6 +35,9 @@ class Linear(Layer):
         super().__init__()
         self.input = None
         self.output = None
+        # xavier from gpt
+        # stddev = np.sqrt(2 / (n_inputs + n_outputs))
+        # self.weights = np.random.normal(0, stddev, (n_inputs, n_outputs)).astype(np.float32)
         self.weights = np.random.normal(0, 0.001, (n_inputs, n_outputs)).astype(np.float32)
         # @TODO check how to initialize better
 
