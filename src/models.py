@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from sklearn.utils import shuffle as sk_shuffle
+from tqdm import tqdm
 
 
 class Model(ABC):
     @abstractmethod
-    def __init__(self, epochs, learning_rate, loss_function, batch_size=1, verbose=False, shuffle=True):
+    def __init__(self, epochs, learning_rate, loss_function, batch_size=1, verbose=True, shuffle=True):
         self.epochs = epochs
         self.learning_rate = learning_rate
         self.loss_function = loss_function
@@ -25,7 +26,7 @@ class Model(ABC):
 
 
 class Sequential(Model):
-    def __init__(self, epochs, learning_rate, loss_function, batch_size=1, verbose=False, shuffle=True):
+    def __init__(self, epochs, learning_rate, loss_function, batch_size=1, verbose=True, shuffle=True):
         super().__init__(epochs, learning_rate, loss_function, batch_size, verbose, shuffle)
         self.layers = []
 
@@ -45,7 +46,7 @@ class Sequential(Model):
         # @TODO later change params from model to this function
         x = x.astype(np.float32)
         y = y.astype(np.float32)
-        for epoch in range(self.epochs):
+        for epoch in (pbar := tqdm(range(self.epochs), disable=not self.verbose)):
             # @TODO add own implementation
             if self.shuffle:
                 x, y = sk_shuffle(x, y)
@@ -63,5 +64,4 @@ class Sequential(Model):
                     error = layer.backward(error, self.learning_rate)
 
             # if epoch % 100 == 0:
-            if self.verbose:
-                print(f"Epoch: {epoch}, Loss: {self.loss_function.forward(self.predict(x), y) / len(x)}")
+            pbar.set_postfix_str(f" Loss: {self.loss_function.forward(self.predict(x), y) / len(x)}")
