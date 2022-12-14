@@ -4,19 +4,20 @@ import numpy as np
 
 
 class LossFunction(ABC):
-    @staticmethod
+
+    input_y = None
+    input_t = None
     @abstractmethod
-    def forward(y, t):
+    def forward(self, y, t):
         return NotImplemented
 
-    @staticmethod
     @abstractmethod
-    def backward():
+    def backward(self):
         return NotImplemented
 
 
-# github coopilot completion
 class MeanSquareError(LossFunction):
+    # github coopilot completion
     def forward(self, y, t):
         self.input_y = y
         self.input_t = t
@@ -26,7 +27,7 @@ class MeanSquareError(LossFunction):
         return 2 * (self.input_y - self.input_t) / self.input_y.size
 
 
-class TestError(LossFunction):
+class MeanAbsoluteError(LossFunction):
     def forward(self, y, t):
         self.input_y = y
         self.input_t = t
@@ -36,9 +37,9 @@ class TestError(LossFunction):
         return 2 * 1 * (self.input_y - self.input_t)
 
 
-# github coopilot completion
-#https://github.com/ddbourgin/numpy-ml/blob/master/numpy_ml/neural_nets/losses/losses.py#L110-L222
 class CrossEntropy(LossFunction):
+    # github coopilot completion
+    #https://github.com/ddbourgin/numpy-ml/blob/master/numpy_ml/neural_nets/losses/losses.py#L110-L222
     def forward(self, y, t):
         self.old_y = y
         self.old_t = t
@@ -60,8 +61,8 @@ def mean_square_error_derivative(y, t):
     return 2 * (y - t)
 
 
-# https://math.stackexchange.com/questions/2843505/derivative-of-softmax-without-cross-entropy
 def cross_entropy(y, t):
+    # https://math.stackexchange.com/questions/2843505/derivative-of-softmax-without-cross-entropy
     return np.sum(-t * np.log(y))
 
 
