@@ -43,7 +43,7 @@ def test_conv2d_batch_controlled():
     ])
 
     my_conv = Conv2D(
-        n_filters=1,
+        n_outputs=1,
         filter_size=3,
         stride=1,
         padding=1
@@ -100,7 +100,7 @@ def test_conv2d_batch_random():
     ))
 
     my_conv = Conv2D(
-        n_filters=1,
+        n_outputs=1,
         filter_size=filter_size,
         stride=1,
         padding=0

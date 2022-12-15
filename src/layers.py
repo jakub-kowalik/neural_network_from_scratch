@@ -96,19 +96,20 @@ def getWindows(input, output_size, kernel_size, padding=0, stride=1, dilate=0):
     )
 
 class Conv2D(Layer):
-    def __init__(self, n_filters, filter_size, stride=1, padding=0):
+    def __init__(self, n_inputs, n_outputs, filter_size, stride=1, padding=0):
         super().__init__()
         self._input = None
         self._output = None
-        self.n_filters = n_filters
+        self.n_inputs = n_inputs
+        self.n_outputs = n_outputs
         self.filter_size = filter_size
         self.stride = stride
         self.padding = padding
 
-        stddev = np.sqrt(2 / (n_filters + filter_size + filter_size))
-        self.weights = np.random.normal(0, stddev, (n_filters, filter_size, filter_size)).astype(np.float32)
+        stddev = np.sqrt(2 / (n_inputs + n_outputs + filter_size + filter_size))
+        self.weights = np.random.normal(0, stddev, (n_outputs, n_inputs, filter_size, filter_size)).astype(np.float32)
         # self.weights = np.random.normal(0, 0.01, (n_filters, filter_size, filter_size)).astype(np.float32)
-        self.bias = np.zeros((1, n_filters)).astype(np.float32)
+        self.bias = np.zeros((1, n_outputs)).astype(np.float32)
 
     def forward(self, x):
         self._input = x
@@ -123,26 +124,22 @@ class Conv2D(Layer):
 
         self._output = np.empty((  # empty should be faster than zeros
             input_batch_size,
-            self.n_filters,
-            ((input_height - self.filter_size + 2 * self.padding) // self.stride) + 1,
-            ((input_width - self.filter_size + 2 * self.padding) // self.stride) + 1
+            self.n_outputs,
+            ((input_height - self.filter_size + (2 * self.padding)) // self.stride) + 1,
+            ((input_width - self.filter_size + (2 * self.padding)) // self.stride) + 1
         ))
 
         out_samples, out_channels, out_height, out_width = self._output.shape
 
         # for b in range(out_samples):
-        for f in range(self.n_filters):
+        for f in range(self.n_outputs):
             for h in range(out_height):
                 for w in range(out_width):
                     self._output[:, f, h, w] = np.sum(
                         padded[:, :,
                         h * self.stride:h * self.stride + self.filter_size,
                         w * self.stride:w * self.stride + self.filter_size
-                        ] * self.weights[f] + self.bias[0][f], axis=(1, 2, 3))
-        # print(self._output.shape)
-        # print(self._output)
-
-        # self._input = padded
+                        ] * self.weights[f]) + self.bias[0][f]
 
         return self._output
 
@@ -153,34 +150,36 @@ class Conv2D(Layer):
         error_padded = np.pad(error, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)))
 
         input_error = np.empty(self._input.shape)
-        out_samples, out_channels, out_height, out_width = input_error.shape
+        out_samples, out_channels, out_height, out_width = self._input.shape
 
         padded = np.pad(self._input, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)))
 
-        # for b in range(out_samples):
+        # # for b in range(out_samples):
         # for f in range(out_channels):
-        for h in range(out_height):
-            for w in range(out_width):
-                input_error[:, :, h, w] \
-                    = np.sum(error_padded[:, :, h:h + self.filter_size, w:w + self.filter_size]
-                             * self.weights)
+        #     for h in range(out_height):
+        #         for w in range(out_width):
+        #             input_error[:, f, h, w] \
+        #                 = np.sum(error_padded[:, :, h:h + self.filter_size, w:w + self.filter_size]
+        #                          * self.weights)
 
         # # print(input_error.shape)
         # print(error_padded.shape, 'x')
         # print(self._input.shape)
         # print(input_error.shape)
+        # print(error.shape, 'x')
+        # print(padded.shape)
 
         # old_weights = self.weights.copy()
+        for c in range(self.n_inputs):
+            for f in range(self.n_outputs):
+                for h in range(self.filter_size):
+                    for w in range(self.filter_size):
+                        self.weights[f, :, h, w] -= learning_rate * np.sum(
+                            padded[:, c,
+                            h * self.stride:h * self.stride + error.shape[-2],
+                            w * self.stride:w * self.stride + error.shape[-1]] * error)
 
-        for f in range(self.n_filters):
-            for h in range(self.filter_size):
-                for w in range(self.filter_size):
-                    self.weights[:, h, w] -= learning_rate * np.sum(
-                        padded[:, :,
-                        h * self.stride:h * self.stride + error.shape[-2],
-                        w * self.stride:w * self.stride + error.shape[-1]] * error, axis=(0, 2, 3))
-
-        self.bias -= learning_rate * np.sum(error, axis=(0, 2, 3))
+        self.bias -= learning_rate * np.sum(error.astype(np.float32), axis=(0, 2, 3))
 
         # print(self.weights - old_weights)
         # print("-------------")
