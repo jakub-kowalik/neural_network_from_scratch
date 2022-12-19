@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.layers import Flatten, Conv2D
+from src.layers import Flatten, Conv2DVectorized
 
 import tensorflow as tf
 
@@ -42,7 +42,7 @@ def test_conv2d_batch_controlled():
         [1, 2, 1]
     ])
 
-    my_conv = Conv2D(
+    my_conv = Conv2DVectorized(
         n_outputs=1,
         filter_size=3,
         stride=1,
@@ -67,7 +67,7 @@ def test_conv2d_batch_controlled():
 
 import numpy as np
 
-from src.layers import Flatten, Conv2D
+from src.layers import Flatten, Conv2DVectorized
 
 import tensorflow as tf
 
@@ -99,7 +99,7 @@ def test_conv2d_batch_random():
         filter_size
     ))
 
-    my_conv = Conv2D(
+    my_conv = Conv2DVectorized(
         n_outputs=1,
         filter_size=filter_size,
         stride=1,
