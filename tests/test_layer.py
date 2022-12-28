@@ -1,6 +1,7 @@
 import numpy as np
+import torch
 
-from src.layers import Flatten, Conv2DVectorized
+from src.layers import Flatten, Conv2DVectorized, Conv2D
 
 import tensorflow as tf
 
@@ -18,58 +19,123 @@ def test_flatten():
 
 
 def test_conv2d_batch_controlled():
-    the_image = np.asarray([
-        [[
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
-        ]],
-        [[
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
-        ]],
-        [[
-            [1, 2, 3],
-            [4, 5, 6],
-            [7, 8, 9]
-        ]]
+    the_image = np.asarray([[
+        [
+            [2, 2, 0, 0, 0],
+            [2, 0, 1, 0, 1],
+            [2, 0, 1, 2, 1],
+            [2, 0, 0, 1, 0],
+            [0, 2, 1, 0, 1]
+        ],
+        [
+            [2, 1, 1, 2, 0],
+            [0, 2, 1, 2, 1],
+            [2, 2, 1, 0, 2],
+            [2, 2, 2, 2, 0],
+            [1, 2, 0, 2, 1]
+        ],
+        [
+            [0, 1, 1, 0, 0],
+            [0, 0, 1, 2, 0],
+            [2, 0, 1, 1, 2],
+            [1, 1, 2, 1, 2],
+            [0, 2, 1, 0, 1]
+        ],
+    ],
+        [
+            [
+                [2, 2, 0, 0, 0],
+                [2, 0, 1, 0, 1],
+                [2, 0, 1, 2, 1],
+                [2, 0, 0, 1, 0],
+                [0, 2, 1, 0, 1]
+            ],
+            [
+                [2, 1, 1, 2, 0],
+                [0, 2, 1, 2, 1],
+                [2, 2, 1, 0, 2],
+                [2, 2, 2, 2, 0],
+                [1, 2, 0, 2, 1]
+            ],
+            [
+                [0, 1, 1, 0, 0],
+                [0, 0, 1, 2, 0],
+                [2, 0, 1, 1, 2],
+                [1, 1, 2, 1, 2],
+                [0, 2, 1, 0, 1]
+            ],
+        ]])
+
+    weights = np.asarray([
+        [
+            [
+                [1, 0, 0],
+                [0, 0, -1],
+                [0, 0, -1]
+            ],
+            [
+                [1, 1, 0],
+                [-1, 1, -1],
+                [1, 1, 1]
+            ],
+            [
+                [0, -1, 1],
+                [1, -1, -1],
+                [0, -1, 1]
+            ]
+        ],
+        [
+            [
+                [0, -1, 1],
+                [0, 0, -1],
+                [1, 0, -1]
+            ],
+            [
+                [1, 1, -1],
+                [0, 0, 0],
+                [-1, 0, -1]
+            ],
+            [
+                [0, 0, 1],
+                [0, 0, -1],
+                [0, 1, -1]
+            ]
+        ],
     ])
 
-    filter_weights = np.asarray([
-        [-1, -2, -1],
-        [0, 0, 0],
-        [1, 2, 1]
-    ])
+    pytorch_conv = torch.nn.Conv2d(
+        in_channels=3,
+        out_channels=2,
+        kernel_size=3,
+        bias=False,
+        stride=1,
+        padding_mode='zeros',
+        padding=0
+    )
 
-    my_conv = Conv2DVectorized(
-        n_outputs=1,
+    x_tensor = torch.from_numpy(the_image.astype(np.float32))
+    x_tensor.requires_grad = True
+    pytorch_conv.weight = torch.nn.Parameter(torch.from_numpy(weights.astype(np.float32)))
+
+    out_torch = pytorch_conv.forward(x_tensor).detach().numpy()
+
+
+    my_conv = Conv2D(
+        input_size=(3, 5, 5),
+        n_outputs=2,
         filter_size=3,
         stride=1,
-        padding=1
+        padding=0
     )
 
-    my_conv.weights = np.expand_dims(filter_weights, 0)
+    my_conv.weights = np.einsum("abcd -> bacd", weights)
 
-    tf_conv2d = tf.nn.conv2d(
-        input=np.einsum("bchw -> bhwc", the_image),
-        filters=np.expand_dims(filter_weights, (2, 3)),
-        padding='SAME',
-        data_format='NHWC',
-        strides=1
-    )
+    out_conv2d = my_conv.forward(the_image)
 
     assert np.isclose(
-        my_conv.forward(the_image),
-        np.einsum("NHWC->NCHW", tf_conv2d)
+        out_conv2d,
+        out_torch
     ).all()
-
-
-import numpy as np
-
-from src.layers import Flatten, Conv2DVectorized
-
-import tensorflow as tf
 
 
 def test_flatten():
@@ -86,40 +152,44 @@ def test_flatten():
 
 def test_conv2d_batch_random():
     batch = np.random.randint(1, 100)
-    channels = 1  # @TODO figure out how tensorflow handles multiple channels in weights
+    channels = np.random.randint(1, 10)
     height = np.random.randint(10, 100)
     width = height
     the_image = np.random.random((batch, channels, height, width)).astype(np.float32)
 
-    print(the_image.shape)
+    n_outputs = np.random.randint(1, 10)
 
-    filter_size = np.random.randint(1, 10)
-    filter_weights = np.random.random((
-        filter_size,
-        filter_size
-    ))
+    weights = np.random.random((n_outputs, channels, 3, 3)).astype(np.float32)
 
-    my_conv = Conv2DVectorized(
-        n_outputs=1,
-        filter_size=filter_size,
+    pytorch_conv = torch.nn.Conv2d(
+        in_channels=channels,
+        out_channels=n_outputs,
+        kernel_size=3,
+        bias=False,
+        stride=1,
+        padding_mode='zeros',
+        padding=0
+    )
+
+    x_tensor = torch.from_numpy(the_image.astype(np.float32))
+    x_tensor.requires_grad = True
+    pytorch_conv.weight = torch.nn.Parameter(torch.from_numpy(weights.astype(np.float32)))
+
+    out_torch = pytorch_conv.forward(x_tensor).detach().numpy()
+
+    my_conv = Conv2D(
+        input_size=(channels, height, width),
+        n_outputs=n_outputs,
+        filter_size=3,
         stride=1,
         padding=0
     )
 
-    my_conv.weights = np.expand_dims(filter_weights, 0).astype(np.float32)
+    my_conv.weights = np.einsum("abcd -> bacd", weights)
 
-    tf_conv2d = tf.nn.conv2d(
-        input=np.einsum("bchw -> bhwc", the_image),
-        filters=np.expand_dims(filter_weights, (2, 3)),
-        padding='VALID',
-        data_format='NHWC',
-        strides=1
-    )
-    print(my_conv.forward(the_image).shape)
+    out_conv2d = my_conv.forward(the_image)
+
     assert np.isclose(
-        my_conv.forward(the_image),
-        np.einsum("NHWC->NCHW", tf_conv2d)
+        out_conv2d,
+        out_torch
     ).all()
-
-
-
