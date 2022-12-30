@@ -1,35 +1,25 @@
-from abc import ABC, abstractmethod
-from typing import Tuple, Union, List
-
+from src.loss_functions.loss_function_base import LossFunction
+from src.models.model_base import Model
+from typing import Union, Tuple, List
 import numpy as np
 from sklearn.utils import shuffle as sk_shuffle
 from tqdm import tqdm
 
-from src.loss_functions import LossFunction
-
-
-class Model(ABC):
-    @abstractmethod
-    def __init__(self, input_size: Union[int, Tuple[int, int, int]], output_size: int):
-        self.input_size = input_size
-        self.output_size = output_size
-
-    @abstractmethod
-    def predict(self, x, training=False):
-        return NotImplemented
-
-    @abstractmethod
-    def fit(self, x, y):
-        return NotImplemented
-
 
 class Sequential(Model):
-    def __init__(self, input_size: Union[int, Tuple[int, int, int]], output_size: int):
+    def __init__(
+            self,
+            input_size: Union[int, Tuple[int, int, int]],
+            output_size: int,
+            layers: List = None
+    ):
         super().__init__(input_size, output_size)
-        self.layers = []
+
+        if layers is not None:
+            for layer in layers:
+                self.add(layer)
 
     def add(self, layer):
-        # @TODO add automatic input size detection
         if len(self.layers) == 0:
             layer.set_input(self.input_size)
         else:
@@ -84,10 +74,15 @@ class Sequential(Model):
                 for layer in reversed(self.layers):
                     error = layer.backward(error, learning_rate)
 
-            postfix_string = f" Train loss: {loss_function.forward(self.predict(x, training=True), y) / len(x)}"
+            train_loss = loss_function.forward(self.predict(x, training=True), y) / len(x)
+            self.training_losses.append(train_loss)
+
+            postfix_string = f" Train loss: {train_loss}"
 
             if validation_data is not None:
+                val_loss = loss_function.forward(self.predict(validation_data[0], training=True), validation_data[1]) / len(validation_data[0])
                 postfix_string += \
-                    f" Val loss: {loss_function.forward(self.predict(validation_data[0], training=True), validation_data[1]) / len(validation_data[0])}"
+                    f" Val loss: {val_loss}"
+                self.validation_losses.append(val_loss)
 
             pbar.set_postfix_str(postfix_string)
