@@ -3,6 +3,7 @@ from src.models.model_base import Model
 from typing import Union, Tuple, List
 import numpy as np
 from sklearn.utils import shuffle as sk_shuffle
+from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
 
@@ -54,8 +55,11 @@ class Sequential(Model):
             shuffle: bool = True,
             validation_data: Union[List, Tuple[np.ndarray, np.ndarray]] = None,
     ):
-        x = training_data[0].astype(np.float32)
-        y = training_data[1].astype(np.float32)
+        assert self.output_size == self.layers[-1].output_size, \
+            "Output size of model must match output size of last layer"
+
+        x = training_data[0]
+        y = training_data[1]
 
         for epoch in (pbar := tqdm(range(epochs), disable=not verbose)):
             # @TODO add own implementation
@@ -74,15 +78,25 @@ class Sequential(Model):
                 for layer in reversed(self.layers):
                     error = layer.backward(error, learning_rate)
 
-            train_loss = loss_function.forward(self.predict(x, training=True), y) / len(x)
-            self.training_losses.append(train_loss)
+            train_predictions = self.predict(x, training=True)
 
-            postfix_string = f" Train loss: {train_loss}"
+            train_loss = loss_function.forward(train_predictions, y) / len(x)
+            train_accuracy = accuracy_score(np.argmax(y, axis=1), np.argmax(train_predictions, axis=1))
+            self.training_losses.append(train_loss)
+            self.training_accuracies.append(train_accuracy)
+
+            postfix_string = f" Train loss: {train_loss:.4f}"
+            postfix_string += f" Train accuracy: {train_accuracy:.2f}"
 
             if validation_data is not None:
-                val_loss = loss_function.forward(self.predict(validation_data[0], training=True), validation_data[1]) / len(validation_data[0])
+                val_predictions = self.predict(validation_data[0], training=True)
+                val_loss = loss_function.forward(val_predictions, validation_data[1]) / len(validation_data[0])
+                val_accuracy = accuracy_score(np.argmax(val_predictions, axis=1), np.argmax(validation_data[1], axis=1))
                 postfix_string += \
-                    f" Val loss: {val_loss}"
+                    f" Val loss: {val_loss:.4f}"
+                postfix_string += \
+                    f" Val accuracy: {val_accuracy:.2f}"
                 self.validation_losses.append(val_loss)
+                self.validation_accuracies.append(val_accuracy)
 
             pbar.set_postfix_str(postfix_string)

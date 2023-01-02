@@ -2,8 +2,8 @@ from .layer_base import Layer
 from functools import reduce
 
 
+# github copilot completion
 class Flatten(Layer):
-    # github copilot completion
     def __init__(self):
         super().__init__()
         self.saved_shape = None

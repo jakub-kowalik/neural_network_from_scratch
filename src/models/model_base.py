@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 import matplotlib.pyplot as plt
 
 
@@ -17,6 +17,9 @@ class Model(ABC):
         self.training_losses = []
         self.validation_losses = []
 
+        self.training_accuracies = []
+        self.validation_accuracies = []
+
     @abstractmethod
     def predict(self, x, training=False):
         return NotImplemented
@@ -31,11 +34,18 @@ class Model(ABC):
             print("\t" + str(layer))
         print("}")
 
-    def plot_history(self):
-        plt.title("Model loss")
-        plt.plot(self.training_losses, label="train")
-        plt.plot(self.validation_losses, label="val")
+    def plot_history(self, parameters: List[str] = ['loss']):
+        if parameters is None:
+            raise ValueError("parameters must not be None")
+
+        plt.title("Model History")
+        if 'loss' in parameters:
+            plt.plot(self.training_losses, label="train loss")
+            plt.plot(self.validation_losses, label="val loss")
+        if 'accuracy' in parameters:
+            plt.plot(self.training_accuracies, label="train accuracy", linestyle='--')
+            plt.plot(self.validation_accuracies, label="val accuracy", linestyle='--')
         plt.xlabel("Epoch")
-        plt.ylabel("Loss")
+        plt.ylabel("Value")
         plt.legend()
         plt.show()

@@ -5,8 +5,10 @@ import numpy as np
 
 
 # https://blog.ca.meron.dev/Vectorized-CNN/
-# Author Cameron White
+# Author: Cameron White
 # Date: 27.12.2022
+# Comment: Code from blog post is used with minor changed to match implementation.
+#          Mainly used to compare performance and correctness of my implementation.
 class Conv2DVectorized(Layer):
     def __init__(self, input_size=None, n_outputs=1, filter_size=3, stride=1, padding=0):
         super().__init__()
@@ -24,11 +26,6 @@ class Conv2DVectorized(Layer):
         self.filter_size = filter_size
         self.stride = stride
         self.padding = padding
-
-        # stddev = np.sqrt(2 / (n_outputs + filter_size + filter_size))
-        # self.weights = np.random.normal(0, stddev, (n_outputs, n_inputs, filter_size, filter_size)).astype(np.float32)
-        # # self.weights = np.random.normal(0, 0.01, (n_filters, filter_size, filter_size)).astype(np.float32)
-        # self.bias = np.zeros((1, n_outputs)).astype(np.float32)
 
         self.initialize_weights()
 

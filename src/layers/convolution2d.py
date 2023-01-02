@@ -5,6 +5,11 @@ import numpy as np
 from src.layers.layer_base import Layer
 
 
+# resources used:
+# https://datascience-enthusiast.com/DL/Convolution_model_Step_by_Stepv2.html
+# https://stackoverflow.com/questions/61264959/how-to-zero-pad-rgb-image
+# https://datascience-enthusiast.com/DL/Convolution_model_Step_by_Stepv2.html
+# https://johnwlambert.github.io/conv-backprop/
 class Conv2D(Layer):
     def __init__(self, input_size=None, n_outputs=1, filter_size=3, stride=1, padding=0):
         """
@@ -33,13 +38,6 @@ class Conv2D(Layer):
 
         self.initialize_weights()
 
-        # self.output_size = self.calculate_output_size()
-
-        # stddev = np.sqrt(2 / (n_outputs + filter_size))
-        # self.weights = np.random.normal(0, stddev, (n_inputs, n_outputs, filter_size, filter_size)).astype(np.float32)
-        # # self.weights = np.random.normal(0, 0.01, (n_filters, filter_size, filter_size)).astype(np.float32)
-        # self.bias = np.zeros((1, n_outputs)).astype(np.float32)
-
     def set_input(self, x: Tuple[int, int, int]):
         self.input_size = x
         self.n_inputs = x[0]
@@ -49,14 +47,14 @@ class Conv2D(Layer):
     def set_n_outputs(self, x):
         self.n_outputs = x
 
+    # @TODO create package for weight initialization
     def initialize_weights(self):
         if not (self.n_inputs is None or self.n_outputs is None):
             stddev = np.sqrt(2 / (self.n_inputs + self.n_outputs))
             self.weights = np.random.normal(0, stddev,
-                                            (self.n_inputs, self.n_outputs, self.filter_size, self.filter_size)).astype(
-                np.float32)
+                                            (self.n_inputs, self.n_outputs, self.filter_size, self.filter_size))
             # self.weights = np.random.normal(0, 0.01, (n_filters, filter_size, filter_size)).astype(np.float32)
-            self.bias = np.zeros((1, self.n_outputs)).astype(np.float32)
+            self.bias = np.zeros((1, self.n_outputs))
 
             self.output_size = self.calculate_output_size()
 
@@ -68,14 +66,11 @@ class Conv2D(Layer):
         )
 
     def forward(self, x):
-        # resources used:
-        # https://datascience-enthusiast.com/DL/Convolution_model_Step_by_Stepv2.html
 
         self._input = x
 
         input_batch_size, input_channels, input_height, input_width = x.shape
 
-        # https://stackoverflow.com/questions/61264959/how-to-zero-pad-rgb-image
         # B C H W -> 0 on B, 0 on C, padding on H, padding on W
         padded = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)),
                         constant_values=0)
@@ -96,18 +91,16 @@ class Conv2D(Layer):
             for h in range(out_height):
                 for w in range(out_width):
                     self._output[:, o, h, w] = np.sum(
-                        padded[:, :,
-                        h * self.stride:h * self.stride + self.filter_size,
-                        w * self.stride:w * self.stride + self.filter_size
+                        padded[
+                            :,
+                            :,
+                            h * self.stride:h * self.stride + self.filter_size,
+                            w * self.stride:w * self.stride + self.filter_size
                         ] * self.weights[:, o], axis=(1, 2, 3)) + self.bias[0][o]
 
         return self._output
 
     def backward(self, error, learning_rate):
-        # resources used:
-        # https://datascience-enthusiast.com/DL/Convolution_model_Step_by_Stepv2.html
-        # https://johnwlambert.github.io/conv-backprop/
-
         batch_size, n_channels, height, width = self._input.shape
         out_samples, out_channels, out_height, out_width = error.shape
 
@@ -119,13 +112,7 @@ class Conv2D(Layer):
                               ((0, 0), (0, 0), (pdd, pdd), (pdd, pdd)),
                               constant_values=0)
 
-        input_error = np.zeros_like(self._input).astype(np.float32)
-
-        # print("input_error", input_error.shape)
-        # print("error_padded", error_padded.shape)
-        # print("self._input", self._input.shape)
-        # print("padded", padded.shape)
-        # print("error", error.shape)
+        input_error = np.zeros_like(self._input)
 
         out_samples, out_channels, out_height, out_width = input_error.shape
 
@@ -134,11 +121,17 @@ class Conv2D(Layer):
                 for h in range(out_height):
                     for w in range(out_width):
                         input_error[:, i, h, w] \
-                            += np.sum(self.weights[i, o] * error_padded[:, o,
-                                                    h:h + self.filter_size,
-                                                    w:w + self.filter_size], axis=(1, 2))
+                            += np.sum(self.weights[i, o]
+                                      * error_padded[
+                                            :, o,
+                                            h:h + self.filter_size,
+                                            w:w + self.filter_size
+                                        ], axis=(1, 2)
+                                      )
 
         # old implementation using scipy correlate2d
+        # very slow
+
         # for b in range(out_samples):
         #     for i in range(self.n_inputs):
         #         for o in range(self.n_outputs):
@@ -151,11 +144,13 @@ class Conv2D(Layer):
             for o in range(self.n_outputs):
                 for h in range(self.filter_size):
                     for w in range(self.filter_size):
-                        self.weights[i, o, h, w] -= learning_rate \
-                                                    * np.sum(padded[:, i,
-                                                             h * self.stride:h * self.stride + error_height,
-                                                             w * self.stride:w * self.stride + error_width] *
-                                                             error[:, o, :, :])
+                        self.weights[i, o, h, w] -= \
+                            learning_rate * np.sum(padded[
+                                                       :,
+                                                       i,
+                                                       h * self.stride:h * self.stride + error_height,
+                                                       w * self.stride:w * self.stride + error_width
+                                                   ] * error[:, o, :, :])
 
         self.bias[0, :] -= learning_rate * np.sum(error, axis=(0, 2, 3))
 

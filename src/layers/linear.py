@@ -3,6 +3,11 @@ import numpy as np
 from src.layers.layer_base import Layer
 
 
+# Implementation is mostly from previous course "PUM"
+# Main resource used: https://pduch.kis.p.lodz.pl/PSI.pdf
+# There might still be some code used from internet that I'm not able to verify
+#
+# https://stackoverflow.com/questions/62249084/what-is-the-numpy-equivalent-of-tensorflow-xavier-initializer-for-cnn
 class Linear(Layer):
     def __init__(
             self,
@@ -20,15 +25,13 @@ class Linear(Layer):
         self.output_size = self.n_outputs
 
         self.initialize_weights()
-        # https://stackoverflow.com/questions/62249084/what-is-the-numpy-equivalent-of-tensorflow-xavier-initializer-for-cnn
-        # self.weights = np.random.uniform(-0.005, 0.005, (n_inputs, n_outputs)).astype(np.float32)
 
+    # @TODO create package for weight initialization
     def initialize_weights(self):
         if not (self.n_inputs is None or self.n_outputs is None):
             # xavier from gpt
             stddev = np.sqrt(2 / (self.n_inputs + self.n_outputs))
-            self.weights = np.random.normal(0, stddev, (self.n_inputs, self.n_outputs)).astype(np.float32)
-
+            self.weights = np.random.normal(0, stddev, (self.n_inputs, self.n_outputs))
             self.bias = np.zeros((1, self.n_outputs))
 
     def forward(self, x):

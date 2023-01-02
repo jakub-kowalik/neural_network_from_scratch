@@ -3,8 +3,8 @@ import numpy as np
 from src.loss_functions.loss_function_base import LossFunction
 
 
+#github copilot completion
 class MeanSquareError(LossFunction):
-    # github coopilot completion
     def forward(self, y, t):
         self.input_y = y
         self.input_t = t
