@@ -11,5 +11,7 @@ class Sigmoid(ActivationFunction):
         return self._output
 
     def backward(self, x, *args):
-        self._error = (1 / (1 + np.exp(-self._output))) * (1 - (1 / (1 + np.exp(-self._output))))
+        self._error = (1 / (1 + np.exp(-self._output))) * (
+            1 - (1 / (1 + np.exp(-self._output)))
+        )
         return self._error

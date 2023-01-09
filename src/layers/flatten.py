@@ -27,10 +27,14 @@ class Flatten(Layer):
         pass
 
     def __str__(self):
-        return self.__class__.__name__ \
-            + "(input size: " + str(self.input_size) \
-            + ", outputs: " + str(self.output_size) \
+        return (
+            self.__class__.__name__
+            + "(input size: "
+            + str(self.input_size)
+            + ", outputs: "
+            + str(self.output_size)
             + ")"
+        )
 
     def __repr__(self):
         return self.__str__()

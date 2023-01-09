@@ -1,4 +1,4 @@
-__all__ = ['Sigmoid', 'Tanh', 'ReLU', 'Softmax']
+__all__ = ["Sigmoid", "Tanh", "ReLU", "Softmax"]
 
 from .relu import ReLU
 from .sigmoid import Sigmoid

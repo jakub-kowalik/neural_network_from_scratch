@@ -1,3 +1,3 @@
-__all__ = ['Sequential']
+__all__ = ["Sequential"]
 
 from .sequential import Sequential

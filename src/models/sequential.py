@@ -9,10 +9,10 @@ from tqdm import tqdm
 
 class Sequential(Model):
     def __init__(
-            self,
-            input_size: Union[int, Tuple[int, int, int]],
-            output_size: int,
-            layers: List = None
+        self,
+        input_size: Union[int, Tuple[int, int, int]],
+        output_size: int,
+        layers: List = None,
     ):
         super().__init__(input_size, output_size)
 
@@ -45,18 +45,19 @@ class Sequential(Model):
         return self.layers[index]
 
     def fit(
-            self,
-            training_data: Union[List, Tuple[np.ndarray, np.ndarray]] = None,
-            epochs: int = 10,
-            learning_rate: float = 0.0001,
-            loss_function: LossFunction = None,
-            batch_size: int = 1,
-            verbose: bool = False,
-            shuffle: bool = True,
-            validation_data: Union[List, Tuple[np.ndarray, np.ndarray]] = None,
+        self,
+        training_data: Union[List, Tuple[np.ndarray, np.ndarray]] = None,
+        epochs: int = 10,
+        learning_rate: float = 0.0001,
+        loss_function: LossFunction = None,
+        batch_size: int = 1,
+        verbose: bool = False,
+        shuffle: bool = True,
+        validation_data: Union[List, Tuple[np.ndarray, np.ndarray]] = None,
     ):
-        assert self.output_size == self.layers[-1].output_size, \
-            "Output size of model must match output size of last layer"
+        assert (
+            self.output_size == self.layers[-1].output_size
+        ), "Output size of model must match output size of last layer"
 
         x = training_data[0]
         y = training_data[1]
@@ -67,8 +68,8 @@ class Sequential(Model):
                 x, y = sk_shuffle(x, y)
 
             for i in range(0, len(x), batch_size):
-                x_batch = x[i:i + batch_size]
-                y_batch = y[i:i + batch_size]
+                x_batch = x[i : i + batch_size]
+                y_batch = y[i : i + batch_size]
 
                 output = self.predict(x_batch, training=True)
 
@@ -81,7 +82,9 @@ class Sequential(Model):
             train_predictions = self.predict(x, training=True)
 
             train_loss = loss_function.forward(train_predictions, y) / len(x)
-            train_accuracy = accuracy_score(np.argmax(y, axis=1), np.argmax(train_predictions, axis=1))
+            train_accuracy = accuracy_score(
+                np.argmax(y, axis=1), np.argmax(train_predictions, axis=1)
+            )
             self.training_losses.append(train_loss)
             self.training_accuracies.append(train_accuracy)
 
@@ -90,12 +93,15 @@ class Sequential(Model):
 
             if validation_data is not None:
                 val_predictions = self.predict(validation_data[0], training=True)
-                val_loss = loss_function.forward(val_predictions, validation_data[1]) / len(validation_data[0])
-                val_accuracy = accuracy_score(np.argmax(val_predictions, axis=1), np.argmax(validation_data[1], axis=1))
-                postfix_string += \
-                    f" Val loss: {val_loss:.4f}"
-                postfix_string += \
-                    f" Val accuracy: {val_accuracy:.2f}"
+                val_loss = loss_function.forward(
+                    val_predictions, validation_data[1]
+                ) / len(validation_data[0])
+                val_accuracy = accuracy_score(
+                    np.argmax(val_predictions, axis=1),
+                    np.argmax(validation_data[1], axis=1),
+                )
+                postfix_string += f" Val loss: {val_loss:.4f}"
+                postfix_string += f" Val accuracy: {val_accuracy:.2f}"
                 self.validation_losses.append(val_loss)
                 self.validation_accuracies.append(val_accuracy)
 

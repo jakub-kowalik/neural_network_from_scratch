@@ -1,4 +1,4 @@
-__all__ = ['Conv2D', 'Flatten', 'Activation', 'Dropout', 'Linear', 'Conv2DVectorized']
+__all__ = ["Conv2D", "Flatten", "Activation", "Dropout", "Linear", "Conv2DVectorized"]
 
 from .linear import Linear
 from .activation import Activation

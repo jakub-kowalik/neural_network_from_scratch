@@ -1,4 +1,4 @@
-__all__ = ['CrossEntropy', 'MeanAbsoluteError', 'MeanSquareError']
+__all__ = ["CrossEntropy", "MeanAbsoluteError", "MeanSquareError"]
 
 from .cross_entropy import CrossEntropy
 from .mean_absolute_error import MeanAbsoluteError

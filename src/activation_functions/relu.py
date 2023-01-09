@@ -8,5 +8,5 @@ class ReLU(ActivationFunction):
         return self._output
 
     def backward(self, x):
-        self._error = 1. * (self._output > 0)
+        self._error = 1.0 * (self._output > 0)
         return self._error

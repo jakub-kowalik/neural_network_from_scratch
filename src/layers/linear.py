@@ -9,11 +9,7 @@ from src.layers.layer_base import Layer
 #
 # https://stackoverflow.com/questions/62249084/what-is-the-numpy-equivalent-of-tensorflow-xavier-initializer-for-cnn
 class Linear(Layer):
-    def __init__(
-            self,
-            n_inputs: int = None,
-            n_outputs: int = None
-    ):
+    def __init__(self, n_inputs: int = None, n_outputs: int = None):
         super().__init__()
         self._input = None
         self._output = None
@@ -57,7 +53,10 @@ class Linear(Layer):
         pass
 
     def __str__(self):
-        return self.__class__.__name__ + f"(inputs: {self.n_inputs}, outputs: {self.n_outputs})"
+        return (
+            self.__class__.__name__
+            + f"(inputs: {self.n_inputs}, outputs: {self.n_outputs})"
+        )
 
     def __repr__(self):
         return self.__str__()

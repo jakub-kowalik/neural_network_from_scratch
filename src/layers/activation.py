@@ -4,10 +4,10 @@ from src.layers.layer_base import Layer
 
 class Activation(Layer):
     def __init__(
-            self,
-            activation_function: ActivationFunction,
-            n_inputs: int = None,
-            n_outputs: int = None
+        self,
+        activation_function: ActivationFunction,
+        n_inputs: int = None,
+        n_outputs: int = None,
     ):
         self.activation_function = activation_function
 
